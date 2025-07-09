@@ -11,12 +11,11 @@
 jd9365_lcd lcd = jd9365_lcd(LCD_RST);
 gsl3680_touch touch = gsl3680_touch(TP_I2C_SDA, TP_I2C_SCL, TP_RST, TP_INT);
 
-// static lv_disp_draw_buf_t draw_buf;
 lv_display_t *disp_drv;
 static uint32_t *buf;
 static uint32_t *buf1;
 
-// 显示刷新
+// display refresh routine
 void my_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *color_map)
 {
     const int offsetx1 = area->x1;
@@ -67,17 +66,36 @@ void setup()
     disp_drv = lv_display_create(LCD_H_RES, LCD_V_RES);
     lv_display_set_flush_cb(disp_drv, my_disp_flush);
     lv_display_set_buffers(disp_drv, buf, buf1, buffer_size * sizeof(uint32_t), LV_DISPLAY_RENDER_MODE_FULL);
-    /*Initialize the display*/
 
     lv_indev_t *indev = lv_indev_create();
     lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
     lv_indev_set_read_cb(indev, my_touchpad_read);
 
-    // lv_demo_widgets(); /* 小部件示例 */
+    // lv_demo_widgets();      /* 小部件示例 */
     // lv_demo_music();        /* 类似智能手机的现代音乐播放器演示 */
     // lv_demo_stress();       /* LVGL 压力测试 */
     // lv_demo_benchmark();    /* 用于测量 LVGL 性能或比较不同设置的演示 */
     Serial.println("setup ");
+
+    constexpr int BIT_DEPTH = 14;
+    constexpr int MAX_PWM_VAL = 1 << BIT_DEPTH;
+    if (!ledcAttachChannel(LCD_LED, 1220, BIT_DEPTH, 0))
+    {
+        log_e("Error setting ledc pin %i. system halted", LCD_LED);
+        while (1)
+            delay(1000);
+    }
+
+    if (!ledcWrite(LCD_LED, MAX_PWM_VAL >> 4))
+    {
+        log_e("Error setting ledc value. system halted");
+        while (1)
+            delay(1000);
+    }
+
+    lv_obj_t *label = lv_label_create(lv_scr_act()); // Create label on active screen
+    lv_label_set_text(label, "Hello World");         // Set label text
+    lv_obj_center(label);
 }
 
 void loop()
