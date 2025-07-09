@@ -21,7 +21,7 @@ This repo showcases a minimal, functional setup using LVGL's latest version on a
 - **Display:** 10.1" MIPI DSI panel (JD9365 controller)
 - **Touch Controller:** GSL3680 (I2C)
 - **Resolution:** 1280x800
-- **Interface:** 4-lane MIPI DSI
+- **Interface:** 2-lane MIPI DSI
 
 ---
 
