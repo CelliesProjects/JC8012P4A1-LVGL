@@ -3,7 +3,6 @@
 
 #include <Arduino.h>
 #include "lvgl.h"
-#include "demos/lv_demos.h"
 #include "pins_config.h"
 #include "lcd/jd9365_lcd.h"
 #include "touch/gsl3680_touch.h"
@@ -15,6 +14,8 @@ lv_display_t *disp_drv;
 static uint32_t *buf;
 static uint32_t *buf1;
 
+static lv_obj_t *label;
+
 // display refresh routine
 void my_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *color_map)
 {
@@ -23,7 +24,7 @@ void my_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *color_map
     const int offsety1 = area->y1;
     const int offsety2 = area->y2;
     lcd.lcd_draw_bitmap(offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
-    lv_display_flush_ready(disp); // 告诉lvgl刷新完成
+    lv_display_flush_ready(disp);
 }
 
 void my_touchpad_read(lv_indev_t *indev_driver, lv_indev_data_t *data)
@@ -41,7 +42,6 @@ void my_touchpad_read(lv_indev_t *indev_driver, lv_indev_data_t *data)
     {
         data->state = LV_INDEV_STATE_PR;
 
-        // 设置坐标
         data->point.x = touchX;
         data->point.y = touchY;
         Serial.printf("x=%d,y=%d \r\n", touchX, touchY);
@@ -71,12 +71,6 @@ void setup()
     lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
     lv_indev_set_read_cb(indev, my_touchpad_read);
 
-    // lv_demo_widgets();      /* 小部件示例 */
-    // lv_demo_music();        /* 类似智能手机的现代音乐播放器演示 */
-    // lv_demo_stress();       /* LVGL 压力测试 */
-    // lv_demo_benchmark();    /* 用于测量 LVGL 性能或比较不同设置的演示 */
-    Serial.println("setup ");
-
     constexpr int BIT_DEPTH = 14;
     constexpr int MAX_PWM_VAL = 1 << BIT_DEPTH;
     if (!ledcAttachChannel(LCD_LED, 1220, BIT_DEPTH, 0))
@@ -93,14 +87,52 @@ void setup()
             delay(1000);
     }
 
-    lv_obj_t *label = lv_label_create(lv_scr_act()); // Create label on active screen
-    lv_label_set_text(label, "Hello World");         // Set label text
+    // create a style
+    static lv_style_t style_big;
+    lv_style_init(&style_big);
+    lv_style_set_text_font(&style_big, &lv_font_montserrat_48);
+
+    // create label
+    label = lv_label_create(lv_scr_act());
+    // apply style to label
+    lv_obj_add_style(label, &style_big, 0);
+    lv_label_set_text(label, "Hello World");
     lv_obj_center(label);
 }
 
 void loop()
 {
     lv_timer_handler();
-    lv_tick_inc(5);
+
+    lv_indev_t *indev = lv_indev_get_next(nullptr);
+    if (indev && lv_indev_get_type(indev) == LV_INDEV_TYPE_POINTER)
+    {
+        lv_point_t point;
+        lv_indev_get_point(indev, &point); // gets current or last point
+        lv_indev_state_t state = lv_indev_get_state(indev);
+
+        static lv_point_t last = {-1, -1};
+        static bool last_pressed = false;
+
+        if (state == LV_INDEV_STATE_PRESSED &&
+            (point.x != last.x || point.y != last.y || !last_pressed))
+        {
+            last = point;
+            last_pressed = true;
+
+            char buf[64];
+            snprintf(buf, sizeof(buf), "Touch: %d, %d", point.x, point.y);
+            lv_label_set_text(label, buf);
+            lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+        }
+        else if (state == LV_INDEV_STATE_RELEASED && last_pressed)
+        {
+            last_pressed = false;
+            lv_label_set_text(label, "Hello World");
+            lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+        }
+    }
+
     delay(5);
+    lv_tick_inc(5);
 }
