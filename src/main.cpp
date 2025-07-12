@@ -16,7 +16,6 @@ static uint32_t *buf1;
 
 static lv_obj_t *label;
 
-// display refresh routine
 void my_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *color_map)
 {
     const int offsetx1 = area->x1;
@@ -87,6 +86,8 @@ void setup()
             delay(1000);
     }
 
+    lv_obj_set_style_bg_color(lv_scr_act(), lv_palette_main(LV_PALETTE_AMBER), 0);
+
     // create a style
     static lv_style_t style_big;
     lv_style_init(&style_big);
@@ -96,7 +97,7 @@ void setup()
     label = lv_label_create(lv_scr_act());
     // apply style to label
     lv_obj_add_style(label, &style_big, 0);
-    lv_label_set_text(label, "Hello World");
+    lv_label_set_text(label, "Hello World!");
     lv_obj_center(label);
 }
 
@@ -124,12 +125,14 @@ void loop()
             snprintf(buf, sizeof(buf), "Touch: %d, %d", point.x, point.y);
             lv_label_set_text(label, buf);
             lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+            lv_obj_set_style_text_color(label, lv_palette_main(LV_PALETTE_BLUE), 0);
         }
         else if (state == LV_INDEV_STATE_RELEASED && last_pressed)
         {
             last_pressed = false;
-            lv_label_set_text(label, "Hello World");
+            lv_label_set_text(label, "JC8012P4A1 ESP32-P4");
             lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+            lv_obj_set_style_text_color(label, lv_palette_main(LV_PALETTE_NONE), 0);
         }
     }
 
